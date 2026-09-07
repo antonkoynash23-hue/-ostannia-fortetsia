@@ -1,0 +1,1171 @@
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Королівство: Остання Фортеця — Open World</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#17120d;color:#eee;font-family:Georgia,serif}
+#top{height:58px;background:linear-gradient(#3d2a18,#21160d);border-bottom:3px solid #9b6a2e;display:flex;align-items:center;gap:12px;padding:0 12px;position:relative;z-index:5}
+h1{font-size:20px;color:#f0d28b;margin:0 12px 0 0}.res{background:#21170f;border:1px solid #74512a;border-radius:5px;padding:6px 9px}.res b{color:#f2cf82}
+#world{position:absolute;top:58px;bottom:0;left:0;right:0;overflow:hidden;background:#6e8446;cursor:default}
+#worldCanvas{position:absolute;left:0;top:0}
+#ui{position:fixed;left:10px;bottom:10px;width:300px;background:#25180fdf;border:2px solid #986a31;border-radius:7px;padding:9px;z-index:10}
+#ui button{background:#4a321c;color:#f3d9a2;border:1px solid #a7793e;border-radius:4px;padding:7px;margin:2px;cursor:pointer}#ui button.active{background:#8a5b29}
+#log{position:fixed;right:10px;bottom:10px;width:320px;max-height:130px;overflow:auto;background:#21170fe8;border:2px solid #79542b;border-radius:6px;padding:7px;font:12px Arial;z-index:10}
+#help{position:fixed;top:68px;left:50%;transform:translateX(-50%);background:#25180fcc;border:1px solid #986a31;padding:6px 12px;border-radius:5px;z-index:10;font:13px Arial}
+#minimap{position:fixed;right:10px;top:68px;width:180px;height:120px;border:2px solid #9b6a2e;background:#30452b;z-index:10}
+
+#touchbar{display:none;position:fixed;left:0;right:0;bottom:0;background:#20140ddd;border-top:2px solid #986a31;padding:6px;z-index:20;grid-template-columns:repeat(4,1fr);gap:5px}
+#touchbar button{min-height:48px;background:#49301a;color:#f4dba2;border:1px solid #9d7139;border-radius:6px;font-size:13px;font-weight:bold}
+#toast{position:fixed;left:50%;bottom:175px;transform:translateX(-50%);background:#21170fdd;border:1px solid #b38445;padding:8px 14px;border-radius:6px;display:none;z-index:30;font:13px Arial}
+@media(max-width:700px){
+ #top{height:50px;gap:5px;padding:0 6px}h1{font-size:15px;margin-right:3px}.res{padding:5px;font-size:11px}
+ #top>div:last-child{display:none}#world{top:50px}
+ #ui{left:5px;bottom:65px;width:calc(100% - 10px);padding:5px;display:none}
+ #log{right:5px;top:55px;bottom:auto;width:210px;max-height:75px;font-size:10px}
+ #help{top:55px;left:5px;transform:none;width:200px;font-size:10px;display:none}
+ #minimap{right:5px;top:auto;bottom:122px;width:125px;height:84px}
+ #touchbar{display:grid}
+}
+
+#viewbar{position:fixed;right:200px;top:68px;z-index:15;background:#24180fd9;border:1px solid #9b6a2e;border-radius:6px;padding:4px}
+#viewbar button{background:#49301a;color:#f0d39a;border:1px solid #956c39;border-radius:4px;padding:5px 9px}
+#mode3d{font-size:12px;color:#e8c77d;margin-left:4px}
+@media(max-width:700px){#viewbar{right:138px;top:55px}#viewbar button{padding:4px 6px;font-size:11px}}
+
+#villagerPanel{position:absolute;left:12px;bottom:92px;z-index:8;background:rgba(7,12,18,.88);border:1px solid #53677b;border-radius:12px;padding:10px 12px;color:#dce7ef;min-width:205px;max-width:280px;box-shadow:0 8px 24px #0008;display:none}
+#villagerPanel b{color:#ffd27a}.vthought{margin-top:5px;color:#b9d7e8;font-size:12px;line-height:1.3}
+.vdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:#7bd389}
+
+#socialPanel{position:absolute;right:12px;bottom:92px;z-index:8;background:rgba(7,12,18,.9);border:1px solid #53677b;border-radius:12px;padding:10px 12px;color:#dce7ef;min-width:220px;max-width:290px;box-shadow:0 8px 24px #0008}
+#socialPanel b{color:#ffd27a}.socialLine{font-size:12px;margin-top:4px;color:#b9d7e8}
+#requestBadge{display:inline-block;margin-left:5px;padding:2px 6px;border-radius:8px;background:#5a3b20;color:#ffd27a;font-size:10px}
+
+#guildPanel{position:absolute;left:12px;top:92px;z-index:9;background:rgba(7,12,18,.92);border:1px solid #53677b;border-radius:12px;padding:10px 12px;color:#dce7ef;min-width:235px;max-width:310px;box-shadow:0 8px 24px #0008;font-size:12px}
+#guildPanel b{color:#ffd27a}.gline{margin-top:5px;color:#b9d7e8}
+#dungeonPanel{position:absolute;right:12px;top:92px;z-index:9;background:rgba(7,12,18,.92);border:1px solid #53677b;border-radius:12px;padding:10px 12px;color:#dce7ef;min-width:235px;max-width:310px;box-shadow:0 8px 24px #0008;font-size:12px}
+#dungeonPanel b{color:#e7b77a}.dline{margin-top:5px;color:#b9d7e8}
+.adventurerTag{font-size:9px;color:#f0d58a;white-space:nowrap}
+
+#heroPanel{position:absolute;left:12px;top:300px;z-index:9;background:rgba(7,12,18,.92);border:1px solid #53677b;border-radius:12px;padding:10px 12px;color:#dce7ef;min-width:235px;max-width:300px;box-shadow:0 8px 24px #0008;font-size:12px}
+#heroPanel b{color:#ffd27a}.hline{margin-top:4px;color:#b9d7e8}
+
+#simPanel{position:absolute;right:12px;bottom:92px;z-index:10;background:rgba(7,12,18,.94);border:1px solid #53677b;border-radius:12px;padding:10px 12px;color:#dce7ef;min-width:260px;max-width:330px;box-shadow:0 8px 24px #0008;font-size:12px}
+#simPanel b{color:#ffd27a}.simline{margin-top:4px;color:#b9d7e8}
+</style>
+<!-- KINGDOM_SYSTEM_V2 -->
+<style>
+#worldPanel{position:absolute;left:12px;bottom:92px;z-index:9;background:rgba(7,12,18,.93);border:1px solid #53677b;border-radius:12px;padding:10px 12px;color:#dce7ef;min-width:250px;max-width:320px;box-shadow:0 8px 24px #0008;font-size:12px}
+#worldPanel b{color:#ffd27a}.wline{margin-top:4px;color:#b9d7e8}
+</style>
+</head><body>
+<div id="top"><h1>⚔️ ОСТАННЯ ФОРТЕЦЯ</h1><div class=res>🌾 <b id=food>120</b></div><div class=res>🪵 <b id=wood>180</b></div><div class=res>🪨 <b id=stone>120</b></div><div class=res>🪙 <b id=gold>90</b></div><div class=res>👥 <b id=pop>12/40</b></div><div style="margin-left:auto">День <b id=day>1</b> • Слава <b id=score>0</b></div></div>
+<div id=world><canvas id=worldCanvas></canvas></div>
+<div id=help">iPhone: тап по воїну — вибір • тап по землі — рух • «Стіна» + перетягування — будівництво • двома пальцями можна оглядати карту</div>
+<canvas id=minimap width=180 height=120></canvas>
+<div id=ui><b>Командування</b><br>
+<button id=select class=active onclick="mode('select')">🖱️ Вибір</button><button onclick="mode('wall')">🧱 Стіна</button><button onclick="mode('tower')">🗼 Вежа</button>
+<button onclick="train('archer')">🏹 Лучник (20🌾 10🪙)</button><button onclick="train('knight')">⚔️ Рицар (30🌾 25🪙)</button><button onclick="buildFarm()">🌾 Ферма (25🪵)</button>
+<button onclick="attackEnemy()">🔥 Атака фортеці</button><div id=stats style="font:12px Arial;color:#d6c39d;margin-top:5px"></div></div>
+<div id=log></div>
+<div id=toast></div>
+<div id=touchbar>
+<button onclick="mode('select')">🖐️ Вибір</button>
+<button onclick="mode('wall')">🧱 Стіна</button>
+<button onclick="mode('tower')">🗼 Вежа</button>
+<button onclick="attackEnemy()">⚔️ Атака</button>
+<button onclick="train('archer')">🏹 Лучник</button>
+<button onclick="train('knight')">🐎 Рицар</button>
+<button onclick="buildFarm()">🌾 Ферма</button>
+<button onclick="centerArmy()">📍 Військо</button>
+</div>
+<script>
+const c=document.getElementById('worldCanvas'),ctx=c.getContext('2d'),mini=document.getElementById('minimap').getContext('2d');
+let W=7200,H=4800,cam={x:0,y:0},keys={},mouse={x:0,y:0,wx:0,wy:0},modeNow='select',zoom=0.78,drag=false,dragStart=null,selected=[],walls=[],towers=[],farms=[];
+let s={food:120,wood:180,stone:120,gold:90,pop:12,max:40,day:1,score:0,archer:4,knight:2,enemyHP:700};
+let units=[],trees=[],rocks=[],patches=[],enemyUnits=[];
+function resize(){c.width=innerWidth;c.height=innerHeight-58}addEventListener('resize',resize);resize();
+function rand(a,b){return a+Math.random()*(b-a)}function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function log(t){document.getElementById('log').innerHTML='<div>• '+t+'</div>'+document.getElementById('log').innerHTML}
+for(let i=0;i<130;i++)trees.push({x:rand(80,W-80),y:rand(80,H-80),r:rand(14,25)});
+for(let i=0;i<45;i++)rocks.push({x:rand(80,W-80),y:rand(80,H-80),r:rand(12,22)});
+for(let i=0;i<55;i++)patches.push({x:rand(0,W),y:rand(0,H),r:rand(35,100)});
+for(let i=0;i<4;i++)farms.push({x:360+i%2*170,y:360+Math.floor(i/2)*170});
+for(let i=0;i<4;i++)units.push({x:500+i*35,y:520+(i%2)*35,type:'archer',hp:100,selected:false,target:null});
+for(let i=0;i<2;i++)units.push({x:590+i*38,y:610,type:'knight',hp:140,selected:false,target:null});
+for(let i=0;i<10;i++)enemyUnits.push({x:2850+rand(-120,120),y:1150+rand(-150,150),hp:100,target:null});
+let enemyKeep={x:3000,y:1050,w:320,h:280};
+function worldPos(e){return{x:e.clientX+cam.x,y:e.clientY-58+cam.y}}
+function clampCam(){cam.x=Math.max(0,Math.min(W-c.width,cam.x));cam.y=Math.max(0,Math.min(H-c.height+58,cam.y))}
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key==='Escape')mode('select')});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+function mode(m){modeNow=m;document.querySelectorAll('#ui button').forEach(b=>b.classList.remove('active'));if(m==='select')document.getElementById('select').classList.add('active');log(m==='wall'?'Режим будівництва стін: протягни від точки до точки.':m==='tower'?'Клікни по землі, щоб поставити вежу.':'Режим вибору військ.')}
+
+let touchStart=null,lastPinch=0;
+c.addEventListener('pointerdown',e=>{
+ if(e.pointerType==='touch'){c.setPointerCapture(e.pointerId);touchStart={x:e.clientX,y:e.clientY,t:Date.now()};}
+ let p=worldPos(e);
+ if(modeNow==='wall'){drag=true;dragStart=p;return}
+ if(modeNow==='tower'){if(s.wood<45||s.stone<20)return log('Не вистачає ресурсів для вежі.');towers.push({x:p.x,y:p.y});s.wood-=45;s.stone-=20;toast('Вежу збудовано!');render();return}
+ let hits=units.filter(u=>dist(u,p)<28);
+ if(!e.shiftKey) selected.forEach(u=>u.selected=false),selected=[];
+ hits.forEach(u=>{u.selected=true;if(!selected.includes(u))selected.push(u)});
+ render();
+});
+c.addEventListener('pointermove',e=>{let p=worldPos(e);mouse={x:e.clientX,y:e.clientY,wx:p.x,wy:p.y}});
+c.addEventListener('pointerup',e=>{
+ if(e.button===2){return}
+ if(drag){drag=false;let p=worldPos(e),a=dragStart,b=p,len=dist(a,b),segments=Math.max(1,Math.ceil(len/38)),cost=segments*3;
+   if(s.wood<cost||s.stone<segments)return log('Не вистачає дерева або каменю.');
+   for(let i=0;i<segments;i++)walls.push({x:a.x+(b.x-a.x)*(i/(segments-1||1)),y:a.y+(b.y-a.y)*(i/(segments-1||1))});
+   s.wood-=cost;s.stone-=segments;toast('Стіна збудована!');render();return;
+ }
+ if(e.pointerType==='touch' && touchStart){
+   let moved=Math.hypot(e.clientX-touchStart.x,e.clientY-touchStart.y);
+   if(moved<12 && Date.now()-touchStart.t<450 && modeNow==='select' && selected.length){
+      let p=worldPos(e);let target=enemyUnits.find(u=>dist(u,p)<45);
+      selected.forEach(u=>u.target=target||{x:p.x,y:p.y,attack:false});
+      toast(target?'⚔️ Атакуємо!':'📍 Військо рухається'); return;
+   }
+ }
+});
+c.addEventListener('contextmenu',e=>{e.preventDefault();let p=worldPos(e),target=enemyUnits.find(u=>dist(u,p)<35);selected.forEach(u=>u.target=target||{x:p.x,y:p.y,attack:false});log(target?'Війську наказано атакувати!':'Наказ: рух до позначеної точки.')});
+function toast(t){let x=document.getElementById('toast');x.textContent=t;x.style.display='block';clearTimeout(window.tt);window.tt=setTimeout(()=>x.style.display='none',1300)}
+function centerArmy(){if(!units.length)return;let x=units.reduce((a,u)=>a+u.x,0)/units.length,y=units.reduce((a,u)=>a+u.y,0)/units.length;cam.x=x-c.width/(2*zoom);cam.y=y-(c.height-58)/(2*zoom);clampCam();toast('📍 Камера на війську')}
+function train(t){let a=t==='archer'?[20,10]:[30,25];if(s.food<a[0]||s.gold<a[1])return log('Не вистачає їжі або золота.');if(s.pop>=s.max)return log('Потрібні нові будинки населення.');s.food-=a[0];s.gold-=a[1];s.pop++;s[t]++;let n=t==='archer'?{type:t,hp:100}:{type:t,hp:140};units.push({...n,x:500+rand(-30,30),y:520+rand(-30,30),selected:false,target:null});log(t==='archer'?'Новий лучник готовий.':'Новий рицар готовий.');render()}
+function buildFarm(){if(s.wood<25)return log('Не вистачає дерева.');s.wood-=25;s.pop++;farms.push({x:450+rand(-100,180),y:380+rand(-80,250)});log('Побудовано ферму.');render()}
+function attackEnemy(){let p=selected.length?selected:[...units];p.forEach(u=>u.target={x:enemyKeep.x+150,y:enemyKeep.y+130,attack:true});log('Війську наказано штурмувати ворожу фортецю!')}
+function update(){
+  updateVillagers(Math.min(0.05,(performance.now()-(window.__lastFrame||performance.now()))/1000));
+  villageSocialTick(0.05);
+  updateAdventures(0.05);
+  updateWorldSystems(0.05);
+  window.__lastFrame=performance.now();let speed=6;if(keys.w||keys.arrowup)cam.y-=speed;if(keys.s||keys.arrowdown)cam.y+=speed;if(keys.a||keys.arrowleft)cam.x-=speed;if(keys.d||keys.arrowright)cam.x+=speed;clampCam();
+units.forEach(u=>{if(!u.target)return;let t=u.target;if(t.attack&&enemyKeep){let d=Math.hypot(enemyKeep.x+150-u.x,enemyKeep.y+130-u.y);if(d>90){u.x+=(enemyKeep.x+150-u.x)/d*1.7;u.y+=(enemyKeep.y+130-u.y)/d*1.7}else if(Math.random()<.035){s.enemyHP-=u.type==='knight'?9:5;s.score+=u.type==='knight'?2:1;if(s.enemyHP<=0){s.enemyHP=0;log('🏆 Ворожу фортецю зруйновано! Перемога!')}}}else{let d=Math.hypot(t.x-u.x,t.y-u.y);if(d>4){u.x+=(t.x-u.x)/d*2.3;u.y+=(t.y-u.y)/d*2.3}else u.target=null}});
+enemyUnits.forEach(e=>{let near=units.find(u=>dist(u,e)<130);if(near&&Math.random()<.025){near.hp-=3;if(near.hp<=0){units.splice(units.indexOf(near),1);selected=selected.filter(x=>x!==near);s.pop=Math.max(0,s.pop-1);log('⚠️ Воїн загинув у бою.')}}});
+draw();requestAnimationFrame(update)}
+
+function setZoom(v){zoom=Math.max(.48,Math.min(1.25,zoom+v));toast('Масштаб: '+Math.round(zoom*100)+'%')}
+function resetView(){zoom=.78;cam.x=900;cam.y=650;clampCam();toast('🌄 Великий 3D-подібний світ')}
+function iso(x,y){return{x:(x-y)*.72,y:(x+y)*.36}}
+function tile(x,y,w,h){let a=iso(x,y),b=iso(x+w,y),d=iso(x,y+h);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(iso(x+w,y+h).x,iso(x+w,y+h).y);ctx.lineTo(d.x,d.y);ctx.closePath()}
+function draw(){
+ ctx.clearRect(0,0,c.width,c.height);ctx.save();
+ ctx.translate(c.width/2,c.height/2);ctx.scale(zoom,zoom);ctx.translate(-c.width/(2*zoom),-c.height/(2*zoom));
+ ctx.translate(-cam.x,-cam.y);
+ // enormous terrain
+ ctx.fillStyle='#667f42';ctx.fillRect(0,0,W,H);
+ // isometric ground tiles
+ let step=120;
+ for(let y=0;y<H;y+=step)for(let x=0;x<W;x+=step){
+   let p=iso(x,y);ctx.save();ctx.translate(p.x,p.y);
+   ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(step*.72,step*.36);ctx.lineTo(0,step*.72);ctx.lineTo(-step*.72,step*.36);ctx.closePath();
+   ctx.fillStyle=((x/step+y/step)%2?'#71894b':'#6a8245');ctx.fill();ctx.strokeStyle='#5c733d';ctx.lineWidth=1;ctx.stroke();ctx.restore();
+ }
+ patches.forEach(p=>{let q=iso(p.x,p.y);ctx.fillStyle='#7f9150';ctx.beginPath();ctx.ellipse(q.x,q.y,p.r*.75,p.r*.35,0,0,7);ctx.fill()});
+ // trees as raised 3D cones
+ trees.forEach(t=>{let q=iso(t.x,t.y);ctx.save();ctx.translate(q.x,q.y);
+   ctx.fillStyle='#4a321f';ctx.fillRect(-5,0,10,28);
+   ctx.fillStyle='#294b27';ctx.beginPath();ctx.moveTo(0,-48);ctx.lineTo(30,4);ctx.lineTo(-30,4);ctx.closePath();ctx.fill();
+   ctx.fillStyle='#376333';ctx.beginPath();ctx.moveTo(0,-28);ctx.lineTo(25,15);ctx.lineTo(-25,15);ctx.closePath();ctx.fill();ctx.restore()});
+ rocks.forEach(r=>{let q=iso(r.x,r.y);ctx.save();ctx.translate(q.x,q.y);ctx.fillStyle='#77766d';ctx.beginPath();ctx.moveTo(-18,8);ctx.lineTo(-8,-14);ctx.lineTo(13,-18);ctx.lineTo(22,7);ctx.lineTo(5,18);ctx.closePath();ctx.fill();ctx.restore()});
+ farms.forEach(f=>{let q=iso(f.x,f.y);ctx.save();ctx.translate(q.x,q.y);ctx.fillStyle='#9b7d3e';ctx.fillRect(-36,-14,72,28);for(let i=-28;i<30;i+=12){ctx.fillStyle='#594c2b';ctx.fillRect(i,-10,3,20)}ctx.restore()});
+ // walls as chunky raised blocks
+ walls.forEach(w=>{let q=iso(w.x,w.y);ctx.save();ctx.translate(q.x,q.y);ctx.fillStyle='#77614f';ctx.fillRect(-18,-30,36,30);ctx.fillStyle='#594838';ctx.fillRect(-18,0,36,9);ctx.strokeStyle='#3a3029';ctx.strokeRect(-18,-30,36,30);ctx.restore()});
+ towers.forEach(t=>{let q=iso(t.x,t.y);ctx.save();ctx.translate(q.x,q.y);ctx.fillStyle='#75604f';ctx.fillRect(-25,-38,50,38);ctx.fillStyle='#4e3e31';ctx.fillRect(-25,0,50,10);ctx.strokeStyle='#302822';ctx.lineWidth=4;ctx.strokeRect(-25,-38,50,38);ctx.restore()});
+ // player keep
+ let k=iso(495,430);ctx.save();ctx.translate(k.x,k.y);ctx.fillStyle='#645243';ctx.fillRect(-70,-115,140,115);ctx.fillStyle='#49392f';ctx.fillRect(-70,0,140,18);ctx.strokeStyle='#2e2824';ctx.lineWidth=9;ctx.strokeRect(-70,-115,140,115);ctx.fillStyle='#b99242';ctx.font='48px serif';ctx.fillText('⚑',-24,-128);ctx.restore();
+ // enemy keep
+ let ek=iso(enemyKeep.x,enemyKeep.y);ctx.save();ctx.translate(ek.x,ek.y);ctx.fillStyle='#55423e';ctx.fillRect(-120,-145,240,145);ctx.fillStyle='#3e302e';ctx.fillRect(-120,0,240,18);ctx.strokeStyle='#292322';ctx.lineWidth=9;ctx.strokeRect(-120,-145,240,145);ctx.fillStyle='#a9574b';ctx.font='68px serif';ctx.fillText('♜',-35,-55);ctx.restore();
+ // enemies
+ enemyUnits.forEach(e=>{let q=iso(e.x,e.y);ctx.fillStyle='#a44a3d';ctx.beginPath();ctx.arc(q.x,q.y-10,12,0,7);ctx.fill();ctx.fillStyle='#3b2420';ctx.fillRect(q.x-7,q.y,14,10)});
+ // units
+ units.forEach(u=>{let q=iso(u.x,u.y);ctx.save();ctx.translate(q.x,q.y);ctx.fillStyle='#0006';ctx.beginPath();ctx.ellipse(0,7,17,7,0,0,7);ctx.fill();ctx.fillStyle=u.type==='knight'?'#d8c39a':'#6e9cc5';ctx.beginPath();ctx.arc(0,-10,11,0,7);ctx.fill();ctx.fillStyle=u.type==='knight'?'#76634b':'#365b73';ctx.fillRect(-9,0,18,12);if(u.selected){ctx.strokeStyle='#ffe28b';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(0,7,22,9,0,0,7);ctx.stroke()}ctx.restore()});
+ ctx.restore();
+ // minimap
+ mini.clearRect(0,0,180,120);mini.fillStyle='#4e6835';mini.fillRect(0,0,180,120);
+ units.forEach(u=>mm(u.x,u.y,'#fff'));enemyUnits.forEach(u=>mm(u.x,u.y,'#d55'));mm(enemyKeep.x,enemyKeep.y,'#d79');mm(495,430,'#e2c35d');
+ mini.strokeStyle='#ddd';mini.strokeRect(cam.x/W*180,cam.y/H*120,c.width/(zoom*W)*180,(c.height-58)/(zoom*H)*120);
+}
+function render(){['food','wood','stone','gold','day','score'].forEach(k=>document.getElementById(k).textContent=Math.floor(s[k]));document.getElementById('pop').textContent=s.pop+'/'+s.max;document.getElementById('stats').innerHTML=`Обрано: ${selected.length} • Лучники: ${s.archer} • Рицарі: ${s.knight}<br>Стіни: ${walls.length} • Вежі: ${towers.length} • Ворожа фортеця: ${s.enemyHP} HP`}
+// economy
+setInterval(()=>{s.day++;s.food+=farms.length*10;s.wood+=6;s.stone+=3;s.gold+=3;if(s.food<15)log('⚠️ Мало їжі!');render()},7000);
+cam.x=300;cam.y=220;render();log('Відкритий світ готовий. Досліджуй карту, виділяй військо та будуй власні стіни.');requestAnimationFrame(update);
+</script>
+<script>
+/* WORLD_HISTORY_V4 — living dynasties, families, aging, inheritance, territory and history */
+(function(){
+  // Safe defaults for older saves/versions
+  window.families = window.families || [];
+  window.worldHistory = window.worldHistory || [];
+  window.territories = window.territories || [];
+  window.dragonBosses = window.dragonBosses || [];
+  window.cityMarkets = window.cityMarkets || [];
+
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  const names=["Альдрік","Борен","Кайра","Мірен","Теодор","Ліана","Гаррет","Елін","Родерік","Селія","Марек","Нора","Вальтер","Ірма"];
+  const surnames=["Вовчий","Срібний","Кам'яний","Чорноліс","Зоряний","Буревісник","Дубовий","Місячний"];
+
+  function logWorld(text){
+    worldHistory.unshift({day:resources.day||1,text});
+    if(worldHistory.length>80) worldHistory.length=80;
+  }
+
+  // Seed family data from existing villagers/heroes.
+  function ensureFamilies(){
+    if(families.length) return;
+    const people=(window.villagers||[]).slice(0,8);
+    people.forEach((v,i)=>{
+      families.push({
+        id:"fam"+i, name:(v.name||pick(names))+" "+pick(surnames),
+        members:[v.id], wealth:20+Math.floor(Math.random()*40), house:1,
+        legacy:0
+      });
+    });
+  }
+
+  function agePeople(){
+    const all=[...(window.villagers||[]),...(window.heroes||[])];
+    all.forEach(p=>{
+      if(p.age==null) p.age=18+Math.floor(Math.random()*28);
+      // One simulated year every 30 game days.
+      if((resources.day||1)%30===0){
+        p.age++;
+        if(p.age>=60 && Math.random()<0.08){
+          p.alive=false;
+          logWorld(`${p.name||"Житель"} помер у старості.`);
+        }
+      }
+    });
+  }
+
+  function familyGrowth(){
+    if((resources.day||1)%18!==0 || families.length===0) return;
+    if((window.villagers||[]).length >= (resources.max||40)) return;
+    const f=pick(families);
+    if(Math.random()<0.65){
+      const child={id:"child"+Date.now()+Math.floor(Math.random()*9999),
+        name:pick(names), age:0, job:"дитина", personality:pick(["сміливий","обережний","працьовитий"]),
+        x:2600+Math.random()*500,y:2700+Math.random()*400,mood:70,trust:55,
+        hunger:20,energy:90,safety:80,thought:"Я виросту і знайду своє місце у світі.",
+        target:null,state:"child"};
+      villagers.push(child);
+      resources.pop=Math.max(resources.pop||0,(villagers.length));
+      f.members.push(child.id);
+      logWorld(`У родині ${f.name} народилася дитина ${child.name}.`);
+    }
+  }
+
+  function inherit(){
+    (window.heroes||[]).forEach(h=>{
+      if(h.alive===false && !h.inherited){
+        h.inherited=true;
+        const heir=heroes.find(x=>x.alive!==false && x!==h);
+        if(heir){
+          heir.inventory=heir.inventory||[];
+          heir.inventory.push(...((h.inventory||[]).slice(0,2)));
+          heir.gold=(heir.gold||0)+(h.gold||0);
+          logWorld(`Спадок героя ${h.name||"героя"} перейшов до ${heir.name||"наступника"}.`);
+        }
+      }
+    });
+  }
+
+  function territorySim(){
+    if((resources.day||1)%10!==0 || !kingdoms.length) return;
+    const a=pick(kingdoms), b=pick(kingdoms.filter(k=>k!==a));
+    if(!b) return;
+    a.territory=a.territory||1; b.territory=b.territory||1;
+    if(a.warWith && a.warWith.includes(b.id)){
+      if((a.power||0)>(b.power||0)*1.18){
+        a.territory++; b.territory=Math.max(1,b.territory-1);
+        logWorld(`${a.name} захопило прикордонну землю ${b.name}.`);
+      } else if((b.power||0)>(a.power||0)*1.18){
+        b.territory++; a.territory=Math.max(1,a.territory-1);
+        logWorld(`${b.name} відбило територію у ${a.name}.`);
+      }
+    }
+  }
+
+  function cityEconomy(){
+    if((resources.day||1)%7!==0) return;
+    kingdoms.forEach(k=>{
+      k.gold=(k.gold||0)+Math.floor((k.territory||1)*3+Math.random()*8);
+      k.food=(k.food||30)+Math.floor(Math.random()*12-3);
+      k.market=k.market||{grain:20,iron:10,gems:2};
+      k.market.grain=Math.max(0,k.market.grain+Math.floor(Math.random()*9-4));
+      k.market.iron=Math.max(0,k.market.iron+Math.floor(Math.random()*5-2));
+      if(Math.random()<0.18) logWorld(`Ринок ${k.name}: ціни на товари змінилися через врожай і торгівлю.`);
+    });
+  }
+
+  function spawnDragon(){
+    if(dragonBosses.some(d=>d.alive)) return;
+    if((resources.day||1)<12 || Math.random()>0.035) return;
+    const d={id:"dragon"+Date.now(),name:pick(["Вогнекрил","Нічний Жах","Астеріон","Червоний Буревій"]),
+      x:1200+Math.random()*4800,y:700+Math.random()*3000,hp:1400,maxHp:1400,
+      alive:true,damage:45,loot:["Серце Дракона","Золото Древнього Крила"]};
+    dragonBosses.push(d);
+    logWorld(`Над королівствами з'явився дракон ${d.name}!`);
+  }
+
+  function drawDragons(){
+    if(!window.ctx) return;
+    dragonBosses.forEach(d=>{
+      if(!d.alive) return;
+      const sx=(d.x-cam.x)*zoom, sy=(d.y-cam.y)*zoom+58;
+      ctx.save(); ctx.translate(sx,sy); ctx.scale(zoom,zoom);
+      ctx.fillStyle="#6b1f1f";
+      ctx.beginPath(); ctx.moveTo(-55,10); ctx.lineTo(-10,-25); ctx.lineTo(0,-65); ctx.lineTo(20,-28); ctx.lineTo(65,0); ctx.lineTo(25,15); ctx.lineTo(0,5); ctx.lineTo(-30,30); ctx.closePath(); ctx.fill();
+      ctx.fillStyle="#d8b36a"; ctx.fillRect(-35,-82,70,6);
+      ctx.fillStyle="#e33"; ctx.fillRect(-35,-82,70*Math.max(0,d.hp/d.maxHp),6);
+      ctx.fillStyle="#ffd166"; ctx.font="bold 16px sans-serif"; ctx.fillText(d.name,-45,42);
+      ctx.restore();
+    });
+  }
+
+  // Clicking a dragon damages it when the game is in attack mode.
+  const oldPointer = window.worldPos;
+  window.addEventListener("click",function(ev){
+    if(!window.worldPos) return;
+    const pos=worldPos(ev);
+    dragonBosses.forEach(d=>{
+      if(d.alive && Math.hypot(pos.x-d.x,pos.y-d.y)<130){
+        const dmg=Math.max(25,(resources.knight||0)*2+(resources.archer||0));
+        d.hp-=dmg;
+        if(d.hp<=0){
+          d.alive=false;
+          resources.gold=(resources.gold||0)+180;
+          resources.score=(resources.score||0)+500;
+          inventory.push({name:"Серце Дракона",rarity:"легендарний"});
+          logWorld(`Герої королівства перемогли дракона ${d.name} і здобули легендарний трофей.`);
+        } else logWorld(`По дракону ${d.name} завдано ${dmg} шкоди.`);
+      }
+    });
+  });
+
+  function drawHistoryPanel(){
+    let el=document.getElementById("historyPanel");
+    if(!el){
+      el=document.createElement("div"); el.id="historyPanel";
+      el.style.cssText="position:fixed;right:10px;bottom:72px;width:min(330px,78vw);max-height:190px;overflow:auto;background:rgba(12,16,22,.9);color:#eee;padding:10px;border:1px solid #80652f;border-radius:10px;font:12px sans-serif;z-index:30";
+      document.body.appendChild(el);
+    }
+    const lines=worldHistory.slice(0,7).map(e=>`<div style="margin:3px 0"><b>День ${e.day}:</b> ${e.text}</div>`).join("");
+    el.innerHTML=`<b>📜 Хроніка світу</b>${lines||"<div>Історія ще пишеться...</div>"}`;
+  }
+
+  function tickV4(){
+    ensureFamilies(); agePeople(); familyGrowth(); inherit(); territorySim(); cityEconomy(); spawnDragon();
+    drawHistoryPanel();
+  }
+
+  // Hook into the game's update/render loop without replacing it.
+  const originalUpdate=window.update;
+  if(typeof originalUpdate==="function"){
+    window.update=function(...args){ const r=originalUpdate.apply(this,args); tickV4(); return r; };
+  } else {
+    setInterval(tickV4,1000);
+  }
+  const originalRender=window.render;
+  if(typeof originalRender==="function"){
+    window.render=function(...args){ const r=originalRender.apply(this,args); drawDragons(); return r; };
+  } else setInterval(drawDragons,100);
+
+  // Keyboard shortcut for chronology.
+  window.addEventListener("keydown",e=>{
+    if(e.key.toLowerCase()==="h"){
+      const el=document.getElementById("historyPanel");
+      if(el) el.style.display=el.style.display==="none"?"block":"none";
+    }
+  });
+
+  setTimeout(()=>{ensureFamilies();logWorld("Хроніка нового світу розпочалася.");},500);
+})();
+</script>
+<!-- WORLD_HISTORY_V4 -->
+
+
+<script>
+/* ULTIMATE_WORLD_V5 — dynasties, factions, espionage, magic schools, crime,
+   sieges, provinces, world bosses, legends and a persistent world chronicle. */
+(function(){
+"use strict";
+window.dynasties=window.dynasties||[];
+window.provinces=window.provinces||[];
+window.factions=window.factions||[];
+window.spies=window.spies||[];
+window.conspiracies=window.conspiracies||[];
+window.legendLog=window.legendLog||[];
+window.siegeWars=window.siegeWars||[];
+window.magicSchools=window.magicSchools||[
+ {name:"Школа Вогню",icon:"🔥",spells:["Вогняна куля","Стіна полум'я"]},
+ {name:"Школа Льоду",icon:"❄️",spells:["Крижаний спис","Морозний щит"]},
+ {name:"Школа Блискавки",icon:"⚡",spells:["Блискавка","Грім небес"]},
+ {name:"Школа Тіней",icon:"🌑",spells:["Тіньовий крок","Прокляття"]},
+ {name:"Школа Світла",icon:"✨",spells:["Лікування","Благословення"]},
+ {name:"Школа Природи",icon:"🌿",spells:["Лікування землі","Коріння"]}
+];
+window.cityDistricts=window.cityDistricts||["Житловий","Ремісничий","Торговий","Військовий"];
+window.criminalGuilds=window.criminalGuilds||[
+ {name:"Чорні Лиси",power:25,gold:100},
+ {name:"Братство Ножів",power:18,gold:80},
+ {name:"Тіньовий Ринок",power:30,gold:140}
+];
+window.worldBosses=window.worldBosses||[];
+window.playerLegends=window.playerLegends||[];
+window.siegeMachines=window.siegeMachines||[];
+window.royalFactions=window.royalFactions||[];
+window._v5={lastDay:-1,lastEvent:0};
+
+const A=a=>a[Math.floor(Math.random()*a.length)];
+const num=(x,d=0)=>Number.isFinite(+x)?+x:d;
+function day(){return num(window.resources&&resources.day,1)}
+function log(t){
+  if(window.worldHistory){
+    worldHistory.unshift({day:day(),text:t});
+    if(worldHistory.length>120) worldHistory.length=120;
+  }
+  if(window.legendLog){
+    legendLog.unshift({day:day(),text:t});
+    if(legendLog.length>80) legendLog.length=80;
+  }
+}
+function kingdomName(k){return k&&k.name||"невідоме королівство"}
+function ensureWorld(){
+  if(!window.kingdoms) window.kingdoms=[];
+  kingdoms.forEach((k,i)=>{
+    k.territory=Math.max(1,num(k.territory,3));
+    k.gold=num(k.gold,80); k.power=num(k.power,50);
+    k.provinces=k.provinces||[];
+    k.districts=k.districts||cityDistricts.map(x=>({name:x,level:1}));
+    k.factionSupport=k.factionSupport||{nobles:50,merchants:50,peasants:50,military:50,mages:50};
+    if(!k.capitalName) k.capitalName="Столиця "+kingdomName(k);
+  });
+  if(dynasties.length===0){
+    kingdoms.forEach((k,i)=>{
+      dynasties.push({id:"dyn"+i,name:"Дім "+kingdomName(k),kingdom:k.name,
+        ruler:(i===0?"Король":"Володар")+" "+A(["Альдрік","Марек","Родерік","Вальтер","Едгар"]),
+        heir:A(["Леон","Еліза","Артур","Ліана","Теодор"]),prestige:30+Math.random()*50});
+    });
+  }
+  if(provinces.length===0){
+    kingdoms.forEach(k=>{
+      for(let i=0;i<Math.max(2,k.territory);i++)
+        provinces.push({id:"p"+Date.now()+Math.random(),kingdom:k.name,
+          name:A(["Рейнгард","Дубова Долина","Чорний Перевал","Сонячні Поля","Місячний Ліс","Кам'яний Берег"]),
+          wealth:20+Math.floor(Math.random()*80),fort:1+Math.floor(Math.random()*3)});
+    });
+  }
+  if(factions.length===0){
+    factions.push(
+      {name:"Знать",key:"nobles",power:55,loyalty:65},
+      {name:"Купці",key:"merchants",power:45,loyalty:60},
+      {name:"Селяни",key:"peasants",power:40,loyalty:60},
+      {name:"Військові",key:"military",power:50,loyalty:70},
+      {name:"Маги",key:"mages",power:25,loyalty:55}
+    );
+  }
+}
+function dynastyTick(){
+  if(day()===window._v5.lastDay || day()%20!==0) return;
+  dynasties.forEach(d=>{
+    d.prestige=Math.max(0,d.prestige+(Math.random()<.5?1:-1));
+    if(Math.random()<.06){
+      const old=d.ruler, oldHeir=d.heir;
+      d.ruler=oldHeir; d.heir=A(["Леон","Еліза","Артур","Ліана","Теодор","Софія"]);
+      log(`Династія ${d.name}: ${old} помер, престол успадкував ${d.ruler}.`);
+    }
+    if(Math.random()<.10) log(`Династія ${d.name} уклала шлюбний союз.`);
+    if(Math.random()<.07) log(`У династії ${d.name} народився новий спадкоємець.`);
+  });
+}
+function factionTick(){
+  if(day()%7!==0) return;
+  kingdoms.forEach(k=>{
+    Object.keys(k.factionSupport||{}).forEach(key=>{
+      k.factionSupport[key]=Math.max(0,Math.min(100,k.factionSupport[key]+Math.floor(Math.random()*11)-5));
+    });
+    const angry=Object.entries(k.factionSupport).find(([_,v])=>v<22);
+    if(angry && Math.random()<.25){
+      k.power=Math.max(5,k.power-4);
+      log(`У ${kingdomName(k)} назріває конфлікт між владою та фракцією ${angry[0]}.`);
+    }
+  });
+}
+function spyTick(){
+  if(day()%11!==0 || kingdoms.length<2) return;
+  const k=A(kingdoms), target=A(kingdoms.filter(x=>x!==k));
+  if(!target)return;
+  const s={from:k.name,to:target.name,success:Math.random()<.62,mission:A(["крадіжка планів","розвідка армії","підпал складу","підкуп чиновника"])};
+  spies.push(s); if(spies.length>30)spies.shift();
+  if(s.success){target.power=Math.max(1,target.power-3);log(`Шпигун ${kingdomName(k)} успішно виконав місію в ${kingdomName(target)}: ${s.mission}.`);}
+  else log(`Шпигуна ${kingdomName(k)} викрили в ${kingdomName(target)}.`);
+}
+function conspiracyTick(){
+  if(day()%13!==0 || kingdoms.length<2)return;
+  const k=A(kingdoms);
+  if(Math.random()<.35){
+    const c={kingdom:k.name,kind:A(["змова знаті","змова генералів","отруєння","палацовий переворот"]),active:true};
+    conspiracies.push(c); if(conspiracies.length>25)conspiracies.shift();
+    log(`У ${kingdomName(k)} виявлено ${c.kind}!`);
+    if(Math.random()<.35){k.power=Math.max(1,k.power-8);log(`${kingdomName(k)} пережило політичну кризу.`);}
+  }
+}
+function siegeTick(){
+  if(day()%9!==0 || kingdoms.length<2)return;
+  const a=A(kingdoms), candidates=kingdoms.filter(k=>k!==a && (a.warWith||[]).includes(k.id));
+  if(!candidates.length)return;
+  const b=A(candidates), pa=num(a.power,30),pb=num(b.power,30);
+  const atk={attacker:a.name,defender:b.name,progress:Math.floor(20+Math.random()*50),machines:["таран","катапульта","облогова вежа"]};
+  siegeWars.push(atk); if(siegeWars.length>20)siegeWars.shift();
+  if(pa>pb*1.25){
+    a.territory=(a.territory||1)+1;b.territory=Math.max(1,(b.territory||1)-1);
+    a.power-=4;b.power=Math.max(5,b.power-10);
+    log(`Облога завершилась: ${kingdomName(a)} захопило провінцію ${kingdomName(b)}.`);
+  } else log(`Облога ${kingdomName(b)} триває — фортеця ще тримається.`);
+}
+function crimeTick(){
+  if(day()%8!==0)return;
+  const g=A(criminalGuilds);
+  if(Math.random()<.55){
+    const act=A(["контрабанда","пограбування каравану","крадіжка зі складу","підробка монет"]);
+    if(window.resources) resources.gold=Math.max(0,num(resources.gold,0)-Math.floor(3+Math.random()*9));
+    log(`Кримінальна гільдія «${g.name}» організувала: ${act}.`);
+  }
+}
+function magicTick(){
+  if(day()%16!==0 || !window.heroes || !heroes.length)return;
+  const h=A(heroes), school=A(magicSchools);
+  h.magicSchool=school.name; h.spells=h.spells||[];
+  const spell=A(school.spells); if(!h.spells.includes(spell))h.spells.push(spell);
+  log(`${h.name||"Герой"} опанував ${spell} у ${school.name}.`);
+}
+function cityTick(){
+  if(day()%12!==0)return;
+  kingdoms.forEach(k=>{
+    k.districts=k.districts||cityDistricts.map(x=>({name:x,level:1}));
+    const d=A(k.districts); d.level=Math.min(8,(d.level||1)+1);
+    k.gold=(k.gold||0)+8;
+    log(`У місті ${kingdomName(k)} розвинувся район «${d.name}» до рівня ${d.level}.`);
+  });
+}
+function bossTick(){
+  if(day()<15 || Math.random()>.025 || worldBosses.some(x=>x.alive))return;
+  const b={name:A(["Король Мертвих","Володар Орків","Темний Маг","Звір Півночі","Древній Голем"]),
+    x:1200+Math.random()*5000,y:600+Math.random()*3500,hp:1100,maxHp:1100,alive:true};
+  worldBosses.push(b); log(`🌋 Світовий бос «${b.name}» з'явився у світі!`);
+}
+function legendTick(){
+  if(day()%25!==0)return;
+  if(window.heroes&&heroes.length){
+    const h=A(heroes);
+    if(Math.random()<.45){
+      const text=`Легенда: ${h.name||"герой"} прославився після нової пригоди.`;
+      playerLegends.unshift({hero:h.name,text,day:day()});log(text);
+    }
+  }
+}
+function rebellionTick(){
+  if(day()%30!==0)return;
+  kingdoms.forEach(k=>{
+    const low=Object.values(k.factionSupport||{}).some(v=>v<15);
+    if(low && Math.random()<.5){
+      k.power=Math.max(5,k.power-15);
+      k.territory=Math.max(1,(k.territory||1)-1);
+      log(`🔥 Повстання охопило ${kingdomName(k)}! Одна з провінцій відкололася.`);
+    }
+  });
+}
+function drawBosses(){
+  if(!window.ctx||!window.zoom||!window.cam)return;
+  worldBosses.forEach(b=>{
+    if(!b.alive)return;
+    const sx=(b.x-cam.x)*zoom, sy=(b.y-cam.y)*zoom+58;
+    ctx.save();ctx.translate(sx,sy);ctx.scale(zoom,zoom);
+    ctx.fillStyle="#3b263f";ctx.beginPath();ctx.arc(0,0,55,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#f44";ctx.beginPath();ctx.arc(-18,-10,7,0,7);ctx.arc(18,-10,7,0,7);ctx.fill();
+    ctx.fillStyle="#ddd";ctx.font="bold 15px sans-serif";ctx.fillText(b.name,-55,78);
+    ctx.fillStyle="#e33";ctx.fillRect(-55,-75,110,7);ctx.fillStyle="#5f5";ctx.fillRect(-55,-75,110*Math.max(0,b.hp/b.maxHp),7);
+    ctx.restore();
+  });
+}
+function ui(){
+  let el=document.getElementById("ultimatePanel");
+  if(!el){
+    el=document.createElement("div");el.id="ultimatePanel";
+    el.style.cssText="position:fixed;left:10px;bottom:70px;width:min(370px,82vw);max-height:260px;overflow:auto;background:rgba(10,13,18,.94);color:#eee;padding:11px;border:1px solid #8b6a2e;border-radius:12px;font:12px Arial;z-index:40;box-shadow:0 4px 20px #0008";
+    document.body.appendChild(el);
+  }
+  const k=window.kingdoms&&kingdoms[0];
+  const ds=dynasties.slice(0,4).map(d=>`<div>👑 <b>${d.name}</b>: ${d.ruler} → ${d.heir}</div>`).join("");
+  const fs=(k?Object.entries(k.factionSupport||{}).map(([a,v])=>`${a}: ${v}`).join(" · "):"");
+  const last=(window.worldHistory||[]).slice(0,5).map(x=>`<div>Д${x.day}: ${x.text}</div>`).join("");
+  el.innerHTML=`<b>🌍 ЖИВИЙ СВІТ</b> · <span>День ${day()}</span>
+  <hr style="border-color:#555"><b>👑 Династії</b>${ds||"<div>Формуються...</div>"}
+  <div style="margin-top:5px"><b>⚖️ Фракції столиці:</b> ${fs||"—"}</div>
+  <div style="margin-top:6px"><b>📜 Останні події</b>${last||"<div>Історія починається...</div>"}
+  <div style="margin-top:6px;opacity:.75">H — хроніка · J/K — герой/король · N — нове королівство</div>`;
+}
+window.addEventListener("click",function(ev){
+  if(!window.worldPos)return;
+  const pos=worldPos(ev);
+  worldBosses.forEach(b=>{
+    if(b.alive&&Math.hypot(pos.x-b.x,pos.y-b.y)<130){
+      const dmg=Math.max(20,num(resources&&resources.knight,0)*3+num(resources&&resources.archer,0)*2);
+      b.hp-=dmg;
+      if(b.hp<=0){
+        b.alive=false;
+        if(window.resources){resources.gold=(resources.gold||0)+250;resources.score=(resources.score||0)+800}
+        if(window.inventory)inventory.push({name:b.name+" — трофей",rarity:"легендарний"});
+        log(`🏆 ${b.name} переможений! Про це говоритимуть покоління.`);
+      }
+    }
+  });
+});
+function tick(){
+  ensureWorld();
+  if(day()!==window._v5.lastDay){
+    window._v5.lastDay=day();
+    dynastyTick(); factionTick(); spyTick(); conspiracyTick(); siegeTick();
+    crimeTick(); magicTick(); cityTick(); bossTick(); legendTick(); rebellionTick();
+  }
+  ui();
+}
+const oldRAF=window.requestAnimationFrame;
+let last=0;
+function loop(ts){
+  if(ts-last>500){tick();last=ts}
+  if(window.ctx) drawBosses();
+  oldRAF(loop);
+}
+oldRAF(loop);
+})();
+</script>
+<!-- ULTIMATE_WORLD_V5 -->
+
+
+<script>
+/* GAMEPLAY_V6 — direct hero control, tactical combat, sieges, economy, council,
+   rebellions, hordes, titles, inheritance and eras. */
+(function(){
+"use strict";
+window.playerHero=window.playerHero||null;
+window.heroMode=window.heroMode||false;
+window.tacticalOrders=window.tacticalOrders||[];
+window.siegeStates=window.siegeStates||[];
+window.titles=window.titles||[];
+window.council=window.council||[
+ {name:"Маршал",loyalty:65,skill:"війна"},
+ {name:"Казначей",loyalty:60,skill:"економіка"},
+ {name:"Шпигунмайстер",loyalty:55,skill:"розвідка"},
+ {name:"Магістр магії",loyalty:50,skill:"магія"},
+ {name:"Голос народу",loyalty:70,skill:"народ"}
+];
+window.rebelStates=window.rebelStates||[];
+window.hordes=window.hordes||[];
+window.eraIndex=window.eraIndex||0;
+window.eras=window.eras||["Епоха заснування","Епоха королів","Епоха війн","Епоха магії","Епоха драконів"];
+window.playerStats=window.playerStats||{kills:0,dragons:0,sieges:0,rebellions:0,years:0};
+
+const R=window.resources||{};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function D(){return +(R.day||1)}
+function say(t){
+ if(window.worldHistory){worldHistory.unshift({day:D(),text:t});if(worldHistory.length>150)worldHistory.length=150}
+}
+function hero(){
+ if(window.playerHero && playerHero.alive!==false)return playerHero;
+ if(window.heroes&&heroes.length){
+   const h=heroes.find(x=>x.alive!==false)||heroes[0]; window.playerHero=h; return h;
+ }
+ return null;
+}
+function makeHero(){
+ let h=hero();
+ if(!h && window.villagers&&villagers.length){
+   h=villagers.find(x=>x.alive!==false);
+   if(h){h.level=Math.max(2,h.level||2);h.hp=100;h.maxHp=100;h.x=h.x||3500;h.y=h.y||2700;heroes=window.heroes||[];heroes.push(h);window.playerHero=h}
+ }
+ return h;
+}
+function setHeroMode(on){
+ const h=makeHero(); if(!h)return;
+ window.heroMode=on;
+ if(on){h.state="player";say(`${h.name||"Герой"} вирушив у світ особисто.`)}
+ else {h.state="idle";say(`${h.name||"Герой"} повернувся до королівського двору.`)}
+}
+function moveHero(dx,dy){
+ const h=hero();if(!h||!heroMode)return;
+ const speed=5;
+ h.x=Math.max(100,Math.min(W-100,h.x+dx*speed));
+ h.y=Math.max(100,Math.min(H-100,h.y+dy*speed));
+}
+window.addEventListener("keydown",e=>{
+ const k=e.key.toLowerCase();
+ if(k==="j")setHeroMode(true);
+ if(k==="k")setHeroMode(false);
+ if(!heroMode)return;
+ if(k==="w"||k==="arrowup")moveHero(0,-1);
+ if(k==="s"||k==="arrowdown")moveHero(0,1);
+ if(k==="a"||k==="arrowleft")moveHero(-1,0);
+ if(k==="d"||k==="arrowright")moveHero(1,0);
+});
+window.addEventListener("touchstart",function(){},{passive:true});
+
+// Click-to-move for hero when J mode is active.
+window.addEventListener("click",e=>{
+ if(!heroMode||!window.worldPos)return;
+ const h=hero(); if(!h)return;
+ const p=worldPos(e); h.target={x:p.x,y:p.y};
+});
+
+// Animate hero toward target and give direct combat.
+function heroTick(){
+ const h=hero(); if(!h)return;
+ h.maxHp=h.maxHp||120; h.hp=h.hp==null?h.maxHp:h.hp;
+ if(heroMode&&h.target){
+   const dx=h.target.x-h.x,dy=h.target.y-h.y,dist=Math.hypot(dx,dy);
+   if(dist>10){h.x+=dx/dist*4.2;h.y+=dy/dist*4.2}
+   else h.target=null;
+ }
+ if(heroMode && window.enemyUnits){
+   const e=enemyUnits.find(x=>Math.hypot((x.x||0)-h.x,(x.y||0)-h.y)<90);
+   if(e && h._atk!==D()){
+     h._atk=D(); e.hp=(e.hp||30)-18;
+     if(e.hp<=0){const i=enemyUnits.indexOf(e);if(i>=0)enemyUnits.splice(i,1);playerStats.kills++}
+   }
+ }
+}
+function siegeTickV6(){
+ if(D()%8!==0 || !window.kingdoms||kingdoms.length<2)return;
+ const attacker=pick(kingdoms), defenders=kingdoms.filter(k=>k!==attacker && (attacker.warWith||[]).includes(k.id));
+ if(!defenders.length)return;
+ const defender=pick(defenders);
+ let s=siegeStates.find(x=>x.attacker===attacker.name&&x.defender===defender.name);
+ if(!s){s={attacker:attacker.name,defender:defender.name,wall:100,gate:100};siegeStates.push(s)}
+ s.wall=Math.max(0,s.wall-(8+Math.floor(Math.random()*15)));
+ s.gate=Math.max(0,s.gate-(5+Math.floor(Math.random()*12)));
+ if(s.wall===0||s.gate===0){
+   attacker.territory=(attacker.territory||1)+1;
+   defender.territory=Math.max(1,(defender.territory||1)-1);
+   attacker.power=Math.max(1,(attacker.power||30)-5);
+   defender.power=Math.max(1,(defender.power||30)-18);
+   playerStats.sieges++;
+   say(`🏰 Штурм: ${attacker.name} прорвало оборону ${defender.name} і захопило землю.`);
+   siegeStates.splice(siegeStates.indexOf(s),1);
+ }
+}
+function economyV6(){
+ if(D()%10!==0||!window.kingdoms)return;
+ kingdoms.forEach(k=>{
+   k.taxRate=k.taxRate==null?10:k.taxRate;
+   const income=Math.max(2,Math.floor((k.territory||1)*(k.taxRate/10)));
+   k.gold=(k.gold||0)+income;
+   k.unrest=Math.max(0,Math.min(100,(k.unrest||0)+(k.taxRate>25?5:-2)+Math.floor(Math.random()*5-2)));
+   if(k.unrest>70&&Math.random()<.4)createRebel(k);
+ });
+}
+function createRebel(k){
+ if(rebelStates.some(r=>r.parent===k.name))return;
+ const r={name:"Вільне "+pick(["Рейнгард","Північчя","Долина","Князівство")+" "+pick(["Народу","Зорі","Вовка"]),parent:k.name,power:25+Math.floor(Math.random()*25),territory:1};
+ rebelStates.push(r);playerStats.rebellions++;
+ k.power=Math.max(5,(k.power||50)-10);say(`🔥 Повстання! ${r.name} проголосило незалежність від ${k.name}.`);
+}
+function councilTick(){
+ if(D()%14!==0)return;
+ council.forEach(c=>c.loyalty=Math.max(0,Math.min(100,c.loyalty+Math.floor(Math.random()*11)-5)));
+ const angry=council.find(c=>c.loyalty<20);
+ if(angry)say(`⚖️ Радник ${angry.name} відкрито виступив проти політики короля.`);
+}
+function hordeTick(){
+ if(D()<25||Math.random()>.018||hordes.some(h=>h.alive))return;
+ const h={name:pick(["Орда Півночі","Кочівники Степу","Червона Орда"]),size:500+Math.floor(Math.random()*1800),
+ x:500+Math.random()*(W-1000),y:500+Math.random()*(H-1000),alive:true};
+ hordes.push(h);say(`🏴‍☠️ ${h.name} вторглася у королівства! Її армія налічує ${h.size} воїнів.`);
+}
+function titleTick(){
+ const h=hero();if(!h)return;
+ if(playerStats.kills>=10&&!titles.includes("Вбивця чудовиськ"))titles.push("Вбивця чудовиськ"),say(`${h.name} отримав титул «Вбивця чудовиськ».`);
+ if(playerStats.dragons>=1&&!titles.includes("Вбивця драконів"))titles.push("Вбивця драконів"),say(`${h.name} отримав титул «Вбивця драконів».`);
+ if(playerStats.sieges>=3&&!titles.includes("Завойовник"))titles.push("Завойовник"),say(`${h.name} отримав титул «Завойовник».`);
+}
+function eraTick(){
+ if(D()>80 && eraIndex<1)eraIndex=1,say("🌅 Світ увійшов в Епоху королів.");
+ if(D()>180&&eraIndex<2)eraIndex=2,say("⚔️ Почалася Епоха великих війн.");
+ if(D()>300&&eraIndex<3)eraIndex=3,say("🧙 Магія стала визначальною силою світу.");
+ if(D()>500&&eraIndex<4)eraIndex=4,say("🐉 Почалася Епоха драконів.");
+}
+function drawHeroV6(){
+ const h=hero();if(!h||!window.ctx||!window.zoom)return;
+ const sx=(h.x-cam.x)*zoom,sy=(h.y-cam.y)*zoom+58;
+ ctx.save();ctx.translate(sx,sy);ctx.scale(zoom,zoom);
+ ctx.fillStyle=heroMode?"#ffd166":"#9aa4b2";
+ ctx.beginPath();ctx.arc(0,-25,13,0,Math.PI*2);ctx.fill();
+ ctx.fillRect(-10,-12,20,35);
+ ctx.fillStyle="#d6d6d6";ctx.fillRect(8,-8,28,5);
+ if(h.target){ctx.strokeStyle="#ffd166";ctx.beginPath();ctx.arc(0,0,28,0,Math.PI*2);ctx.stroke()}
+ ctx.fillStyle="#e33";ctx.fillRect(-28,-48,56,5);
+ ctx.fillStyle="#5f5";ctx.fillRect(-28,-48,56*Math.max(0,h.hp/(h.maxHp||120)),5);
+ ctx.fillStyle="#fff";ctx.font="bold 13px Arial";ctx.fillText(h.name||"Герой",-28,55);
+ ctx.restore();
+}
+function panelV6(){
+ let el=document.getElementById("v6Panel");
+ if(!el){
+  el=document.createElement("div");el.id="v6Panel";
+  el.style.cssText="position:fixed;top:64px;left:10px;width:min(310px,78vw);background:rgba(8,11,16,.9);color:#eee;padding:10px;border:1px solid #8b6a2e;border-radius:10px;z-index:35;font:12px Arial";
+  document.body.appendChild(el);
+ }
+ const h=hero();
+ el.innerHTML=`<b>⚔️ КОМАНДНИЙ ЦЕНТР</b><br>
+ Режим героя: <b>${heroMode?"УВІМК":"ВИМК"}</b><br>
+ ${h?`❤️ ${Math.ceil(h.hp||0)}/${h.maxHp||120} · Рівень ${h.level||1}<br>`:"Героя ще немає.<br>"}
+ Епоха: <b>${eras[eraIndex]}</b><br>
+ Податок: ${kingdoms[0]?.taxRate||10}% · Повстань: ${rebelStates.length}<br>
+ Титули: ${titles.join(", ")||"—"}<br>
+ 🏰 Облог: ${siegeStates.length} · 🏴 Орди: ${hordes.filter(x=>x.alive).length}<br>
+ <small>J — герой · K — король · WASD/стрілки — рух · клік — йти до точки</small>`;
+}
+let lastDay=-1;
+function tickV6(){
+ if(D()!==lastDay){
+  lastDay=D();heroTick();economyV6();siegeTickV6();councilTick();hordeTick();titleTick();eraTick();
+ } else heroTick();
+ panelV6();
+}
+(function loop(){
+ tickV6();drawHeroV6();requestAnimationFrame(loop);
+})();
+})();
+</script>
+<!-- GAMEPLAY_V6 -->
+
+
+<style id="iphoneMobileV7">
+#mobileHUD{position:fixed;left:0;right:0;bottom:0;z-index:100;display:flex;gap:6px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:rgba(8,10,14,.94);backdrop-filter:blur(8px);touch-action:none}
+#mobileHUD button{flex:1;min-height:52px;border:1px solid #9b7b3d;border-radius:12px;background:#252a32;color:#fff;font-size:13px;font-weight:700;touch-action:manipulation}
+#mobileHUD button:active{transform:scale(.96);background:#454b55}
+#mobileJoystick{position:fixed;left:16px;bottom:92px;width:118px;height:118px;border-radius:50%;background:#ffffff18;border:2px solid #ffffff38;z-index:99;display:none;touch-action:none}
+#mobileStick{position:absolute;width:48px;height:48px;left:33px;top:33px;border-radius:50%;background:#d6b25a99;border:2px solid #fff8}
+#mobileActions{position:fixed;right:12px;bottom:92px;display:none;z-index:99;gap:8px;flex-wrap:wrap;width:150px;justify-content:flex-end}
+#mobileActions button{width:65px;height:55px;border-radius:14px;border:1px solid #9b7b3d;background:#292d35;color:#fff;font-size:22px;touch-action:manipulation}
+#heroJournal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(390px,90vw);max-height:78vh;overflow:auto;background:rgba(12,15,20,.97);color:#eee;border:1px solid #b28a3f;border-radius:16px;padding:16px;z-index:200;display:none;box-shadow:0 15px 50px #000b}
+#heroJournal h2{margin:0 0 8px}
+#heroJournal .close{float:right;border:0;background:#555;color:#fff;border-radius:8px;padding:6px 10px}
+@media (max-width:900px),(pointer:coarse){
+ #mobileHUD,#mobileJoystick,#mobileActions{display:flex}
+ body{padding-bottom:70px;overscroll-behavior:none}
+}
+</style>
+<script>
+/* IPHONE_MOBILE_V7 — touch-first controls, companions, horses, relationships,
+   random encounters, trader interactions, hero journal and autosave. */
+(function(){
+"use strict";
+window.companions=window.companions||[];
+window.heroRelationships=window.heroRelationships||{};
+window.heroMount=window.heroMount||null;
+window.heroJournal=window.heroJournal||[];
+window.mobileEncounter=window.mobileEncounter||null;
+window.mobileSaveKey="last_fortress_iphone_save_v7";
+
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const R=window.resources||{};
+function day(){return +(R.day||1)}
+function H(){
+ if(window.playerHero&&playerHero.alive!==false)return playerHero;
+ if(window.heroes&&heroes.length){window.playerHero=heroes.find(x=>x.alive!==false)||heroes[0];return window.playerHero}
+ return null;
+}
+function msg(t){
+ if(window.worldHistory){worldHistory.unshift({day:day(),text:t});if(worldHistory.length>150)worldHistory.length=150}
+ window.heroJournal.unshift({day:day(),text:t});if(heroJournal.length>60)heroJournal.length=60;
+}
+function ensureMobile(){
+ let hud=document.getElementById("mobileHUD");
+ if(!hud){
+  hud=document.createElement("div");hud.id="mobileHUD";
+  hud.innerHTML=`<button data-act="hero">🧙<br>Герой</button>
+  <button data-act="army">⚔️<br>Армія</button>
+  <button data-act="city">🏰<br>Місто</button>
+  <button data-act="map">🗺️<br>Карта</button>
+  <button data-act="journal">📖<br>Щоденник</button>`;
+  document.body.appendChild(hud);
+  hud.addEventListener("click",e=>{
+   const b=e.target.closest("button");if(!b)return;
+   const a=b.dataset.act;
+   if(a==="hero"){if(typeof setHeroMode==="function")setHeroMode(true);window.heroMode=true}
+   if(a==="army"){window.heroMode=false;msg("Король зосередився на командуванні армією.")}
+   if(a==="city"){window.modeNow="build";msg("Відкрито будівельний режим міста.")}
+   if(a==="map"){window.zoom=Math.min(1.15,(window.zoom||.78)+.12)}
+   if(a==="journal")toggleJournal();
+  });
+ }
+ let joy=document.getElementById("mobileJoystick");
+ if(!joy){
+  joy=document.createElement("div");joy.id="mobileJoystick";joy.innerHTML='<div id="mobileStick"></div>';document.body.appendChild(joy);
+  let active=null;
+  joy.addEventListener("touchstart",e=>{active=e.changedTouches[0].identifier;e.preventDefault()},{passive:false});
+  joy.addEventListener("touchmove",e=>{
+   e.preventDefault();const t=[...e.changedTouches].find(x=>x.identifier===active);if(!t)return;
+   const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+   let dx=t.clientX-cx,dy=t.clientY-cy,d=Math.hypot(dx,dy),m=35;if(d>m){dx=dx/d*m;dy=dy/d*m}
+   const st=document.getElementById("mobileStick");st.style.transform=`translate(${dx}px,${dy}px)`;
+   moveHeroTouch(dx/m,dy/m);
+  },{passive:false});
+  joy.addEventListener("touchend",e=>{active=null;document.getElementById("mobileStick").style.transform="translate(0,0)"});
+ }
+ let acts=document.getElementById("mobileActions");
+ if(!acts){
+  acts=document.createElement("div");acts.id="mobileActions";
+  acts.innerHTML='<button data-a="attack">⚔️</button><button data-a="block">🛡️</button><button data-a="dash">🏃</button><button data-a="magic">✨</button>';
+  document.body.appendChild(acts);
+  acts.addEventListener("click",e=>{
+   const b=e.target.closest("button");if(!b)return;
+   const h=H();if(!h)return;
+   if(b.dataset.a==="attack")attackTouch();
+   if(b.dataset.a==="block"){h.blocking=true;setTimeout(()=>h.blocking=false,600)}
+   if(b.dataset.a==="dash"){h.x+=((h.facingX||1)*120);h.y+=((h.facingY||0)*120)}
+   if(b.dataset.a==="magic")magicTouch();
+  });
+ }
+}
+function moveHeroTouch(x,y){
+ const h=H();if(!h)return;
+ window.heroMode=true;h.facingX=x;h.facingY=y;
+ h.x=Math.max(80,Math.min(W-80,h.x+x*6));
+ h.y=Math.max(80,Math.min(H-80,h.y+y*6));
+}
+function nearestEnemy(){
+ const h=H();if(!h)return null;
+ return (window.enemyUnits||[]).slice().sort((a,b)=>Math.hypot((a.x||0)-h.x,(a.y||0)-h.y)-Math.hypot((b.x||0)-h.x,(b.y||0)-h.y))[0];
+}
+function attackTouch(){
+ const h=H(),e=nearestEnemy();if(!h||!e)return;
+ const d=Math.hypot((e.x||0)-h.x,(e.y||0)-h.y);
+ if(d<150){
+  e.hp=(e.hp||30)-25;h.xp=(h.xp||0)+5;
+  if(e.hp<=0){const i=enemyUnits.indexOf(e);if(i>=0)enemyUnits.splice(i,1);if(window.playerStats)playerStats.kills++}
+ }
+}
+function magicTouch(){
+ const h=H();if(!h)return;
+ h.spells=h.spells||["Вогняна куля"];
+ h.magicPower=(h.magicPower||0)+1;
+ msg(`${h.name||"Герой"} використав магію: ${h.spells[0]}.`);
+}
+function toggleJournal(){
+ let el=document.getElementById("heroJournal");
+ if(!el){
+  el=document.createElement("div");el.id="heroJournal";
+  document.body.appendChild(el);
+ }
+ if(el.style.display==="block"){el.style.display="none";return}
+ const h=H()||{}, inv=(h.inventory||window.inventory||[]).slice(-8);
+ el.innerHTML=`<button class="close" onclick="document.getElementById('heroJournal').style.display='none'">✕</button>
+ <h2>📖 Щоденник героя</h2>
+ <b>${h.name||"Невідомий герой"}</b> · Рівень ${h.level||1}<br>
+ ❤️ ${Math.ceil(h.hp||100)}/${h.maxHp||100}<br>
+ 🐉 Драконів: ${window.playerStats?.dragons||0} · ⚔️ Вбивств: ${window.playerStats?.kills||0}<br>
+ 🏆 Титули: ${(window.titles||[]).join(", ")||"ще немає"}<br>
+ 🐎 Кінь: ${window.heroMount?.name||"немає"}<br>
+ 🤝 Компаньйони: ${(window.companions||[]).map(x=>x.name).join(", ")||"немає"}<hr>
+ <b>🎒 Трофеї</b><div>${inv.map(x=>`<div>• ${x.name||x}</div>`).join("")||"Поки порожньо"}</div><hr>
+ <b>📜 Останні пригоди</b>${heroJournal.slice(0,10).map(x=>`<div>День ${x.day}: ${x.text}</div>`).join("")}`;
+ el.style.display="block";
+}
+function companionTick(){
+ const h=H();if(!h||day()%17!==0)return;
+ if(companions.length<3&&Math.random()<.55){
+  const c={name:pick(["Сірий","Ліана","Берен","Міра","Торн","Еліс"]),class:pick(["лицар","лучниця","маг","злодій","лікар"]),level:1+Math.floor(Math.random()*5),loyalty:55+Math.floor(Math.random()*35)};
+  companions.push(c);msg(`${c.name}, ${c.class}, приєднався до героя.`);
+ }
+ companions.forEach(c=>c.loyalty=Math.max(0,Math.min(100,c.loyalty+(Math.random()<.5?1:-1))));
+}
+function mountTick(){
+ if(!H()||heroMount||day()<8||Math.random()>.025)return;
+ heroMount={name:pick(["Буря","Тінь","Грім","Зоря","Ворон"]),speed:1.25};
+ msg(`🐎 Герой отримав коня «${heroMount.name}». Подорожі стали швидшими.`);
+}
+function encounterTick(){
+ if(mobileEncounter||day()%19!==0||Math.random()>.35)return;
+ mobileEncounter={kind:pick(["поранений лицар","мандрівний купець","загублена дитина","скриня на дорозі","мисливець на чудовиськ"]),expires:day()+3};
+ showEncounter();
+}
+function showEncounter(){
+ if(!mobileEncounter)return;
+ let el=document.getElementById("mobileEncounter");
+ if(!el){
+  el=document.createElement("div");el.id="mobileEncounter";
+  el.style.cssText="position:fixed;left:50%;top:18%;transform:translateX(-50%);width:min(360px,88vw);background:#12161d;color:#fff;border:1px solid #b28a3f;border-radius:16px;padding:16px;z-index:180;box-shadow:0 12px 40px #000b;text-align:center";
+  document.body.appendChild(el);
+ }
+ el.innerHTML=`<h3>🎲 Випадкова подія</h3><p>Ти зустрів: <b>${mobileEncounter.kind}</b></p>
+ <button style="padding:12px;margin:4px;border-radius:10px" onclick="window.resolveMobileEncounter('help')">Допомогти</button>
+ <button style="padding:12px;margin:4px;border-radius:10px" onclick="window.resolveMobileEncounter('trade')">Взаємодія</button>
+ <button style="padding:12px;margin:4px;border-radius:10px" onclick="window.resolveMobileEncounter('pass')">Пройти повз</button>`;
+}
+window.resolveMobileEncounter=function(action){
+ if(!mobileEncounter)return;
+ const kind=mobileEncounter.kind;
+ if(action==="help"){R.gold=(R.gold||0)+10;msg(`🤝 Герой допоміг: ${kind}. Репутація зросла.`)}
+ if(action==="trade"){R.gold=Math.max(0,(R.gold||0)-5);R.food=(R.food||0)+20;msg(`💰 Угода з ${kind} принесла корисні товари.`)}
+ if(action==="pass")msg(`🚶 Герой пройшов повз ${kind}.`);
+ mobileEncounter=null;const el=document.getElementById("mobileEncounter");if(el)el.remove();
+};
+function autosave(){
+ try{
+  const data={day:R.day,resources:R,heroes:window.heroes||[],villagers:window.villagers||[],
+   kingdoms:window.kingdoms||[],playerHero:window.playerHero,companions,heroMount,
+   titles:window.titles||[],history:(window.worldHistory||[]).slice(0,100),playerStats:window.playerStats||{},
+   eraIndex:window.eraIndex||0};
+  localStorage.setItem(window.mobileSaveKey,JSON.stringify(data));
+ }catch(e){}
+}
+window.loadLastFortressSave=function(){
+ try{
+  const s=JSON.parse(localStorage.getItem(window.mobileSaveKey)||"null");if(!s)return false;
+  Object.keys(s.resources||{}).forEach(k=>R[k]=s.resources[k]);
+  if(s.heroes)window.heroes=s.heroes;if(s.villagers)window.villagers=s.villagers;if(s.kingdoms)window.kingdoms=s.kingdoms;
+  window.playerHero=s.playerHero;window.companions=s.companions||[];window.heroMount=s.heroMount||null;
+  window.titles=s.titles||[];window.worldHistory=s.history||[];window.playerStats=s.playerStats||{};
+  window.eraIndex=s.eraIndex||0;msg("💾 Збереження завантажено.");return true;
+ }catch(e){return false}
+};
+function tick(){
+ ensureMobile();companionTick();mountTick();encounterTick();
+ if(D()%5===0)autosave();
+}
+let last=-1;
+setInterval(()=>{if(D()!==last){last=D();tick()}},800);
+setTimeout(()=>{ensureMobile();},300);
+})();
+</script>
+<!-- IPHONE_MOBILE_V7 -->
+
+
+<style id="worldMapV8CSS">
+#worldMapV8{position:fixed;inset:0;background:rgba(8,12,18,.94);z-index:120;display:none;color:#eee;font-family:system-ui,-apple-system,sans-serif}
+#worldMapV8 .wm-head{height:58px;display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(20,27,37,.98);border-bottom:1px solid #59677a}
+#worldMapV8 .wm-head b{font-size:17px;flex:1}
+#worldMapV8 button{border:1px solid #68778a;background:#273447;color:#fff;border-radius:10px;padding:9px 12px;font-weight:700}
+#worldMapCanvas{width:100%;height:calc(100% - 58px);display:block;touch-action:none}
+#worldMapInfo{position:absolute;left:10px;top:68px;max-width:310px;padding:10px 12px;background:rgba(16,22,30,.88);border:1px solid #59677a;border-radius:12px;font-size:12px;pointer-events:none}
+#worldMapInfo strong{font-size:14px}
+@media (max-width:700px){#worldMapV8 .wm-head{padding-bottom:calc(8px + env(safe-area-inset-bottom));height:64px}#worldMapInfo{top:72px;max-width:250px}}
+</style>
+
+<script>
+/* WORLD_MAP_V8: cities, roads, provinces, hero travel, caravans, armies, battles */
+(()=>{
+const overlay=document.createElement('div');
+overlay.id='worldMapV8';
+overlay.innerHTML=`<div class="wm-head"><b>🗺️ Велика карта королівств</b><span id="wmDay"></span><button id="wmClose">✕</button></div><canvas id="worldMapCanvas"></canvas><div id="worldMapInfo">Натисни місто, армію або караван. Герой подорожує натисканням по карті.</div>`;
+document.body.appendChild(overlay);
+const cv=overlay.querySelector('#worldMapCanvas'), x=cv.getContext('2d'), info=overlay.querySelector('#worldMapInfo');
+const cities=[
+ {id:'vald',name:'Вальден',x:.18,y:.30,king:'Вальден',pop:820,power:78,color:'#b85c5c'},
+ {id:'elm',name:'Ельмір',x:.43,y:.19,king:'Ельмір',pop:690,power:66,color:'#5c8eb8'},
+ {id:'chor',name:'Чорногірʼя',x:.73,y:.30,king:'Чорногірʼя',pop:940,power:88,color:'#7d67b8'},
+ {id:'lum',name:'Люмінія',x:.35,y:.69,king:'Люмінія',pop:760,power:72,color:'#5ca47a'},
+ {id:'fort',name:'Остання Фортеця',x:.67,y:.72,king:'Ти',pop:410,power:91,color:'#c49a52'},
+ {id:'port',name:'Порт Срібних Вітрил',x:.86,y:.67,king:'Вільне місто',pop:520,power:55,color:'#7aa7a0'}
+];
+const roads=[[0,1],[1,2],[0,3],[1,3],[1,4],[2,4],[3,4],[4,5],[2,5]];
+let armies=[], caravans=[], battles=[], heroTravel=null, mapOpen=false, selected=null, lastTick=0;
+function sync(){
+ armies=(window.kingdomArmies||[]).map((a,i)=>({id:'a'+i,x:a.x||cities[i%cities.length].x,y:a.y||cities[i%cities.length].y,name:a.name||('Армія '+(i+1)),power:a.power||Math.floor(40+Math.random()*60),king:a.kingdom||'Королівство',target:a.target||null}));
+ if(!armies.length) armies=cities.slice(0,4).map((c,i)=>({id:'a'+i,x:c.x,y:c.y,name:'Армія '+c.name,power:c.power,king:c.king,target:null}));
+ caravans=(window.caravans||[]).map((q,i)=>({id:'c'+i,x:q.x||.2+i*.12,y:q.y||.4,name:q.name||'Караван',gold:q.gold||30,target:q.target||null}));
+}
+function resize(){cv.width=innerWidth*devicePixelRatio;cv.height=(innerHeight-64)*devicePixelRatio;cv.style.width=innerWidth+'px';cv.style.height=(innerHeight-64)+'px';x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);draw()}
+function P(o){return {x:o.x*innerWidth,y:o.y*(innerHeight-64)}}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function cityAt(px,py){return cities.find(c=>dist(P(c),{x:px,y:py})<34)}
+function draw(){
+ if(!mapOpen)return;
+ const w=innerWidth,h=innerHeight-64;x.clearRect(0,0,w,h);
+ x.fillStyle='#16261d';x.fillRect(0,0,w,h);
+ // provinces
+ [[.08,.08,.36,.42,'#27402d'],[.42,.06,.48,.38,'#303b4b'],[.68,.10,.27,.43,'#423c48'],[.12,.50,.43,.42,'#2e4638'],[.53,.48,.42,.44,'#4a4330']].forEach(r=>{x.fillStyle=r[4];x.beginPath();x.roundRect(r[0]*w,r[1]*h,r[2]*w,r[3]*h,38);x.fill()});
+ // rivers
+ x.strokeStyle='#315f76';x.lineWidth=10;x.beginPath();x.moveTo(0,.58*h);x.bezierCurveTo(.28*w,.38*h,.48*w,.78*h,.72*w,.42*h);x.bezierCurveTo(.82*w,.25*h,.93*w,.28*h,w,0);x.stroke();
+ // roads
+ x.lineWidth=4;x.strokeStyle='#9a845e';roads.forEach(([a,b])=>{let A=P(cities[a]),B=P(cities[b]);x.beginPath();x.moveTo(A.x,A.y);x.lineTo(B.x,B.y);x.stroke()});
+ // cities
+ cities.forEach(c=>{let q=P(c);x.fillStyle=c.color;x.beginPath();x.arc(q.x,q.y,20,0,Math.PI*2);x.fill();x.strokeStyle='#eee';x.lineWidth=2;x.stroke();x.fillStyle='#fff';x.font='bold 13px system-ui';x.textAlign='center';x.fillText(c.name,q.x,q.y+39);x.font='11px system-ui';x.fillText('👥 '+c.pop,q.x,q.y+53)});
+ // armies
+ armies.forEach(a=>{let q=P(a);x.fillStyle='#d85b55';x.beginPath();x.moveTo(q.x,q.y-12);x.lineTo(q.x+13,q.y+10);x.lineTo(q.x-13,q.y+10);x.closePath();x.fill();x.fillStyle='#fff';x.font='11px system-ui';x.textAlign='center';x.fillText('⚔️ '+Math.round(a.power),q.x,q.y-17)});
+ caravans.forEach(c=>{let q=P(c);x.fillStyle='#d2ae55';x.fillRect(q.x-10,q.y-8,20,16);x.fillStyle='#fff';x.font='10px system-ui';x.fillText('🛒',q.x,q.y+4)});
+ if(heroTravel){let q=P(heroTravel);x.fillStyle='#fff';x.beginPath();x.arc(q.x,q.y,12,0,Math.PI*2);x.fill();x.fillText('🧙',q.x,q.y+5)}
+ battles.forEach(b=>{let q=P(b);x.fillStyle='#ff5d45';x.beginPath();x.arc(q.x,q.y,18+Math.sin(Date.now()/180)*3,0,Math.PI*2);x.fill();x.fillStyle='#fff';x.fillText('⚔',q.x,q.y+5)});
+}
+function setInfo(title,text){info.innerHTML='<strong>'+title+'</strong><br>'+text}
+function travelTo(c){
+ if(!window.playerHero)return;
+ heroTravel={x:playerHero.x/7200,y:playerHero.y/4800,target:c};
+ setInfo('Подорож: '+c.name,'Герой прямує до міста. Торкнися іншого міста, щоб змінити маршрут.');
+}
+function arrive(){
+ if(!heroTravel)return;
+ let t=heroTravel.target;
+ playerHero.x=t.x*7200;playerHero.y=t.y*4800;
+ if(typeof heroJournal!=='undefined'&&Array.isArray(heroJournal))heroJournal.push('Прибув до '+t.name);
+ if(typeof logEvent==='function')logEvent('🗺️ Герой прибув до '+t.name);
+ heroTravel=null;
+ setInfo('Прибуття',`Ти прибув до <b>${t.name}</b>. Населення: ${t.pop}. Сила: ${t.power}.`);
+}
+function tick(){
+ if(!mapOpen)return;
+ if(heroTravel){
+  let dx=heroTravel.target.x-heroTravel.x,dy=heroTravel.target.y-heroTravel.y,d=Math.hypot(dx,dy);
+  let s=.0018;if(d<.002){heroTravel.x=heroTravel.target.x;heroTravel.y=heroTravel.target.y;arrive()}else{heroTravel.x+=dx/d*s;heroTravel.y+=dy/d*s}
+ }
+ // move caravans and armies along simple routes
+ caravans.forEach((c,i)=>{c.x+=Math.sin(Date.now()/5000+i)*.00012;c.y+=Math.cos(Date.now()/6500+i)*.00012});
+ if(Math.random()<.008&&cities.length>2){let a=cities[Math.floor(Math.random()*cities.length)],b=cities[Math.floor(Math.random()*cities.length)];if(a!==b)battles.push({x:(a.x+b.x)/2,y:(a.y+b.y)/2,ttl:1})}
+ battles=battles.filter(b=>{b.ttl-=.02;return b.ttl>0});
+ draw();requestAnimationFrame(tick);
+}
+function open(){sync();mapOpen=true;overlay.style.display='block';resize();document.getElementById('wmDay').textContent='День '+((window.s&&s.day)||1);requestAnimationFrame(tick)}
+document.getElementById('wmClose').onclick=()=>{mapOpen=false;overlay.style.display='none'};
+cv.addEventListener('pointerdown',e=>{
+ const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;
+ const c=cityAt(px,py);
+ if(c){selected=c;travelTo(c);return}
+ let found=armies.find(a=>dist(P(a),{x:px,y:py})<30);
+ if(found){setInfo(found.name,'Сила: '+Math.round(found.power)+'. Натисни поруч, щоб направити героя до району бою.');return}
+ let cc=caravans.find(a=>dist(P(a),{x:px,y:py})<28);
+ if(cc){setInfo('🛒 '+cc.name,'Товарний караван. Золото: '+cc.gold+'. Захищай його від бандитів.');return}
+ travelTo({name:'цієї точки',x:px/innerWidth,y:py/(innerHeight-64),pop:0,power:0});
+});
+addEventListener('resize',resize);
+const oldOpen=window.openWorldMapV8; window.openWorldMapV8=open;
+const btn=document.createElement('button');btn.textContent='🗺️ Світ';btn.style.cssText='position:fixed;right:12px;top:64px;z-index:70;padding:9px 12px;border-radius:10px;border:1px solid #667;background:#263548;color:white;font-weight:700';
+btn.onclick=open;document.body.appendChild(btn);
+setInterval(()=>{if(mapOpen){sync();document.getElementById('wmDay').textContent='День '+((window.s&&s.day)||1)}},5000);
+})();
+</script>
+</body><!-- KINGDOM_SYSTEM_V2 -->
+</html>
+
+document.addEventListener("dblclick",e=>{
+  if(e.target.closest && e.target.closest("#socialPanel")) resolveVillageRequest();
+});
+  if(d.boss){
+    d.monsters.push({name:"Бос: Володар підземелля",hp:260+d.level*70,atk:24+d.level*3,loot:{gold:180+d.level*60,stone:20},boss:true,x:d.x,y:d.y});
+  }
+
+
+document.addEventListener("keydown",e=>{
+  if(e.key.toLowerCase()==="h" && selectedVillager && selectedVillager.hero){
+    if(foundSettlement(selectedVillager)) toast("Герой заснував нове поселення!");
+    else toast("Герой ще недостатньо відомий або вже є максимум поселень.");
+  }
+});
+
+
+document.addEventListener("keydown",e=>{
+  if(e.key.toLowerCase()==="j") switchToHero();
+  if(e.key.toLowerCase()==="k") switchToKing();
+  if(e.key.toLowerCase()==="n") foundKingdom();
+});
+
+<!-- WORLD_SIMULATION_V3 -->
